@@ -1,0 +1,8 @@
+# 本仓库不提交任何私密信息
+.env
+config.yaml
+data/
+__pycache__/
+*.pyc
+assets/*.mp3
+assets/*.wav

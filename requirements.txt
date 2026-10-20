@@ -1,0 +1,16 @@
+# MIMO Live Companion dependencies (Python 3.10+ / Windows 10/11)
+openai>=1.40.0,<2.0.0        # Unified OpenAI-compatible API (chat / ASR / TTS all via chat/completions)
+httpx>=0.27.0                # Timeout control (connect 5s / read 30s)
+PyYAML>=6.0.1                # config.yaml and agents/*.yaml
+python-dotenv>=1.0.0         # Load MIMO_API_KEY from .env
+sounddevice>=0.4.6           # Microphone capture + TTS playback (PortAudio)
+numpy>=1.24.0,<3.0           # PCM processing, beep tones
+webrtcvad-wheels>=2.0.14     # VAD (maintained fork; original webrtcvad fails to build on new Python)
+mss>=9.0.1                   # Screen capture fallback (works with pygetwindow for window location)
+pygetwindow>=0.0.9           # Locate game windows by title keyword
+Pillow>=10.0.0               # Screenshot scaling / JPEG compression
+keyboard>=0.13.5             # F8 global hotkey (may require admin; failure does not affect the main flow)
+
+# Optional: capturekit - exclusive window capture (works even when the window is occluded)
+#   pip install capturekit
+# If capturekit is unavailable, the script falls back to mss automatically.

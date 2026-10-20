@@ -1,0 +1,66 @@
+# =====================================================================
+# config.example.yaml —— 全部可调参数（复制为 config.yaml 后按需修改）
+# 密钥不放在本文件：MIMO_API_KEY 放在 .env 里
+# =====================================================================
+
+api:
+  base_url: "https://api.xiaomimimo.com/v1"   # 小米 MIMO API 地址
+  connect_timeout: 5      # 连接超时（秒）：实时场景必须短，快速失败快速降级
+  read_timeout: 30        # 读取超时（秒）：ASR/TTS/chat 的单次等待上限
+
+models:
+  chat: "mimo-v2.6-flash"    # 对话 + 视觉理解
+  asr:  "mimo-v2.5-asr"      # 语音识别（走 chat/completions，不是 /audio/transcriptions）
+  tts:  "mimo-v2.5-tts"      # 语音合成（走 chat/completions，不是 /audio/speech）
+
+audio:
+  sample_rate: 16000        # 麦克风采样率（ASR 通常要求 16k 单声道）
+  frame_ms: 30              # VAD 帧长，webrtcvad 只支持 10/20/30ms
+  vad_mode: 2               # webrtcvad 灵敏度 0~3，越大越激进（噪声环境可调低）
+  vad_start_frames: 3       # 连续 3 帧语音判定"开始说话"（3×30ms=90ms，滤突发噪声）
+  silence_ms: 800           # 静音 800ms 判定"说完了"
+  max_record_seconds: 15    # 单次录音上限，防止环境噪声导致无限录音
+  min_record_seconds: 0.3   # 低于该时长视为误触发，不送 ASR
+  barge_in_frames: 6        # 播报中连续 6 帧语音（180ms）= 用户插话，立即打断
+                            # 若用外放音箱容易被自己的声音误打断，建议戴耳机或调大该值
+  queue_frames: 256         # 音频帧缓冲上限（约 7.7 秒），满了丢最旧保实时
+  beep_on_error: true       # ASR 失败时播放短提示音
+
+tts:
+  sample_rate: 24000        # ⚠️ 流式 PCM16 采样率：不确定项，以实际 API 返回为准
+                            # 若播放出来语速/音调不对（变快变慢变尖），改成 16000 或 32000 试试
+                            # 自检方法：24000Hz×16bit×单声道 = 每秒 48000 字节
+  voice: "mimo_default"     # 默认音色；智能体配置里的 tts_voice 优先级更高
+                            # 可选预置音色如：冰糖、苏打（以实际 API 支持为准）
+  style_hint: "用自然、陪伴感的语气说"   # 传给 TTS 的语气提示（role:user 消息）
+  voice_ref: ""              # 音色克隆参考音频路径（支持 mp3/wav，≤10MB；示例: assets/my_voice.mp3）
+                             # 填入你自己的人声样本路径即可启用克隆音色；留空则用预置音色
+                             # ⚠️ 实测克隆合成延迟波动较大（最好约39秒，常见3~4分钟），实时对话建议留空
+  clone_model: "mimo-v2.5-tts-voiceclone"  # 音色克隆模型
+
+screen:
+  enabled: true             # 总开关：false = 完全不截图（纯语音模式）
+  mode: "full"              # full = 整屏抓取（默认）：屏幕上任何窗口的内容 AI 都能看到，不限定窗口
+                            # window = 只抓指定窗口：需配合下面的 window_keyword
+  window_keyword: ""        # 仅 mode=window 时生效：游戏窗口标题关键字，如 "原神"、"League of Legends"
+                            # 留空 = 自动捕获当前前台窗口（每次截图时重新定位）
+  backend: "auto"           # 仅 mode=window 时生效：auto | capturekit | mss
+                            # auto：先试 capturekit（独占窗口，被遮挡也能截），失败自动回退 mss
+  interval_seconds: 25      # 用户不说话时的保底截图间隔（20~30s 建议值）
+  max_edge: 1024            # 发给模型的截图最长边（缩放等比）
+  jpeg_quality: 75          # 发给模型的 JPEG 质量（70~80 平衡细节与延迟）
+  summary_max_edge: 768     # 屏幕阶段总结用的截图降采样尺寸
+  summary_jpeg_quality: 60  # 阶段总结截图的 JPEG 质量
+
+memory:
+  db_path: "data/memory.db"       # SQLite 记忆库位置（WAL 模式；屏幕图片永不入库）
+  history_window: 20              # 每轮注入的历史消息条数（滑动窗口）
+  summarize_threshold: 200        # 未归档消息超过该数量时触发长期记忆压缩
+  summarize_batch: 100            # 每次压缩取多少条较早消息
+  screen_buffer_size: 5           # 屏幕观察缓冲条数（内存队列，不落库）
+  screen_summary_interval_minutes: 3.5   # 屏幕阶段总结最小间隔（分钟）
+  screen_summary_max_age_minutes: 30     # 超过该时长的屏幕总结不再注入 system prompt
+
+agent:
+  default: "example"      # 默认智能体（= agents/ 目录下的文件名；复制 example 改成你自己的）
+  hotkey: "f8"             # 运行中循环切换智能体的全局热键
